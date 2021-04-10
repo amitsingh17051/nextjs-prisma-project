@@ -1,65 +1,79 @@
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
+import {useState} from 'react'
 
-export default function Home() {
+
+import {PrismaClient} from '@prisma/client'
+const prisma = new PrismaClient();
+
+export default function Home({ data }) {
+
+  const [formData, setFormData] = useState({});
+  
+  async function saveProduct(e) {
+    e.preventDefault();
+
+    const response = await fetch('/api/products', {
+      method:'POST',
+      body: JSON.stringify(formData)
+    })
+
+    console.log(JSON.stringify(formData))
+    return await response.json();
+  }
+
   return (
     <div className={styles.container}>
       <Head>
-        <title>Create Next App</title>
+        <title>Kashvee Designs</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+          <h1>Kashvee Products</h1>
+          <ul className={styles.products}>
+            {data.map(item => (
+              <li key="item.id" className={styles.product}>
+                  <span><img src={item.images} width="100px"/></span>
+                  <span>&#8377;  <strong>{item.price}</strong></span>
+                  <span><strong>{item.title}</strong></span>
+                  <span className={styles.desc} >{item.description}</span>
+              </li>
+            ))}
+          </ul>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+          <form onSubmit={saveProduct} method="post" className={styles.form}>
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+              <input type="text" name="title" placeholder="Product Name" onChange={e => setFormData({...formData, title:e.target.value })}/>
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+              <input type="text" name="price" placeholder="Product Price" onChange={e => setFormData({...formData, price: +e.target.value })}/>
 
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
+              
 
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
+              <input type="text" name="images" placeholder="Product Images" onChange={e => setFormData({...formData, images:e.target.value })}/>
+
+              <textarea name="description" id="" cols="30" rows="10" placeholder="Product Description" onChange={e => setFormData({...formData, description: e.target.value })}></textarea>
+
+              <input type="text" name="slug" placeholder="Product slug" onChange={e => setFormData({...formData, slug: e.target.value })}/>
+
+              <button type="submit">Add Product</button>
+
+          </form>
+
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
     </div>
   )
+}
+
+
+
+export async function getServerSideProps() {
+
+  const products = await prisma.products.findMany();
+  return {
+    props: {
+      data: products,
+    }
+  }
+
 }
